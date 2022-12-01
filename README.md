@@ -9,7 +9,7 @@ depth image scans. Furthermore, exporting of the resulting fused volume is possi
 Features
 --------
 * Real-time fusion of depth scans and corresponding RGB color images
-* Easy to use, modern C++14 interface
+* Easy to use, modern C++11 interface
 * Export of the resulting volume as pointcloud
 * Export also as dense surface mesh using the MarchingCubes algorithm
 * Functions for easy export of pointclouds and meshes into the PLY file format
@@ -17,12 +17,12 @@ Features
 
 Dependencies
 ------------
-* **GCC 5** as higher versions do not work with current nvcc (as of 2017).
-* **CUDA 8.0**. In order to provide real-time reconstruction, this library relies on graphics hardware.
+* **GCC (5 - 7)** as higher versions do not work with current nvcc (as of 2022).
+* **CUDA (8.0 - 10.2)**. In order to provide real-time reconstruction, this library relies on graphics hardware.
 Running it exclusively on the CPU is not possible.
-* **OpenCV 3.0** or higher. This library heavily depends on the GPU features of OpenCV that have been refactored in the 3.0 release.
+* **OpenCV (3.0 - 4.5)** or higher. This library heavily depends on the GPU features of OpenCV that have been refactored in the 3.0 release.
 Therefore, OpenCV 2 is not supported.
-* **Eigen3** for efficient matrix and vector operations.
+* **Eigen3 (>=3.3.9)** for efficient matrix and vector operations. Lower versions are not well integrated with cuda!
 
 Prerequisites
 -------------
