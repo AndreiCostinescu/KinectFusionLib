@@ -66,7 +66,7 @@ namespace KinectFusion {
                 dim3 threads(32, 32);
                 dim3 blocks((depth_map.cols + threads.x - 1) / threads.x, (depth_map.rows + threads.y - 1) / threads.y);
 
-                kernel_compute_vertex_map << < blocks, threads >> > (depth_map, vertex_map, depth_cutoff, cam_params);
+                kernel_compute_vertex_map<<<blocks, threads>>>(depth_map, vertex_map, depth_cutoff, cam_params);
 
                 cudaDeviceSynchronize();
             }

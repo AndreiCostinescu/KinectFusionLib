@@ -1,7 +1,7 @@
 // This is the KinectFusion Pipeline Implementation
 // Author: Christian Diller, git@christian-diller.de
 
-#include <KinectFusion.h>
+#include <KinectFusionLib/KinectFusion.h>
 
 #include <fstream>
 

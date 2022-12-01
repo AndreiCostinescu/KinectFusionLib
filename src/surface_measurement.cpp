@@ -1,7 +1,7 @@
 // This is the CPU part of the surface measurement
 // Author: Christian Diller, git@christian-diller.de
 
-#include <KinectFusion.h>
+#include <KinectFusionLib/KinectFusion.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wall"

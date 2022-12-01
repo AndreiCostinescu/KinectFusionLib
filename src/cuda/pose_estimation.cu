@@ -47,16 +47,15 @@ namespace KinectFusion {
             }
 
             __global__
-            void estimate_kernel(const Eigen::Matrix<float, 3, 3, Eigen::DontAlign> rotation_current,
-                                 const Matf31da translation_current,
+            void estimate_kernel(const Eigen::Matrix<float, 3, 3, Eigen::DontAlign> &rotation_current,
+                                 const Matf31da &translation_current,
                                  const PtrStep<float3> vertex_map_current, const PtrStep<float3> normal_map_current,
-                                 const Eigen::Matrix<float, 3, 3, Eigen::DontAlign> rotation_previous_inv,
-                                 const Matf31da translation_previous,
+                                 const Eigen::Matrix<float, 3, 3, Eigen::DontAlign> &rotation_previous_inv,
+                                 const Matf31da &translation_previous,
                                  const CameraParameters cam_params,
                                  const PtrStep<float3> vertex_map_previous, const PtrStep<float3> normal_map_previous,
                                  const float distance_threshold, const float angle_threshold, const int cols,
-                                 const int rows,
-                                 PtrStep<double> global_buffer) {
+                                 const int rows, PtrStep<double> global_buffer) {
                 const int x = blockIdx.x * blockDim.x + threadIdx.x;
                 const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
