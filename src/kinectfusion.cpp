@@ -7,15 +7,14 @@
 
 using cv::cuda::GpuMat;
 
-namespace kinectfusion {
+namespace KinectFusion {
 
     Pipeline::Pipeline(const CameraParameters _camera_parameters,
-                       const GlobalConfiguration _configuration) :
+                       GlobalConfiguration const &_configuration) :
             camera_parameters(_camera_parameters), configuration(_configuration),
             volume(_configuration.volume_size, _configuration.voxel_scale),
             model_data(_configuration.num_levels, _camera_parameters),
-            current_pose{}, poses{}, frame_id{0}, last_model_frame{}
-    {
+            current_pose{}, poses{}, frame_id{0}, last_model_frame{} {
         // The pose starts in the middle of the cube, offset along z by the initial depth
         current_pose.setIdentity();
         current_pose(0, 3) = _configuration.volume_size.x / 2 * _configuration.voxel_scale;
@@ -23,8 +22,7 @@ namespace kinectfusion {
         current_pose(2, 3) = _configuration.volume_size.z / 2 * _configuration.voxel_scale - _configuration.init_depth;
     }
 
-    bool Pipeline::process_frame(const cv::Mat_<float>& depth_map, const cv::Mat_<cv::Vec3b>& color_map)
-    {
+    bool Pipeline::process_frame(const cv::Mat_<float> &depth_map, const cv::Mat_<cv::Vec3b> &color_map) {
         // STEP 1: Surface measurement
         internal::FrameData frame_data = internal::surface_measurement(depth_map, camera_parameters,
                                                                        configuration.num_levels,
@@ -35,12 +33,11 @@ namespace kinectfusion {
         frame_data.color_pyramid[0].upload(color_map);
 
         // STEP 2: Pose estimation
-        bool icp_success { true };
+        bool icp_success{true};
         if (frame_id > 0) { // Do not perform ICP for the very first frame
             icp_success = internal::pose_estimation(current_pose, frame_data, model_data, camera_parameters,
-                                                    configuration.num_levels,
-                                                    configuration.distance_threshold, configuration.angle_threshold,
-                                                    configuration.icp_iterations);
+                                                    configuration.num_levels, configuration.distance_threshold,
+                                                    configuration.angle_threshold, configuration.icp_iterations);
         }
         if (!icp_success)
             return false;
@@ -68,36 +65,31 @@ namespace kinectfusion {
         return true;
     }
 
-    cv::Mat Pipeline::get_last_model_frame() const
-    {
+    cv::Mat Pipeline::get_last_model_frame() const {
         if (configuration.use_output_frame)
             return last_model_frame;
 
-        return cv::Mat(1, 1, CV_8UC1);
+        return cv::Mat{1, 1, CV_8UC1};
     }
 
-    std::vector<Eigen::Matrix4f> Pipeline::get_poses() const
-    {
-        for (auto pose : poses)
+    std::vector<Eigen::Matrix4f> Pipeline::get_poses() const {
+        for (auto pose: poses)
             pose.block(0, 0, 3, 3) = pose.block(0, 0, 3, 3).inverse();
         return poses;
     }
 
-    PointCloud Pipeline::extract_pointcloud() const
-    {
+    PointCloud Pipeline::extract_pointcloud() const {
         PointCloud cloud_data = internal::cuda::extract_points(volume, configuration.pointcloud_buffer_size);
         return cloud_data;
     }
 
-    SurfaceMesh Pipeline::extract_mesh() const
-    {
+    SurfaceMesh Pipeline::extract_mesh() const {
         SurfaceMesh surface_mesh = internal::cuda::marching_cubes(volume, configuration.triangles_buffer_size);
         return surface_mesh;
     }
 
-    void export_ply(const std::string& filename, const PointCloud& point_cloud)
-    {
-        std::ofstream file_out { filename };
+    void export_ply(const std::string &filename, const PointCloud &point_cloud) {
+        std::ofstream file_out{filename};
         if (!file_out.is_open())
             return;
 
@@ -126,9 +118,8 @@ namespace kinectfusion {
         }
     }
 
-    void export_ply(const std::string& filename, const SurfaceMesh& surface_mesh)
-    {
-        std::ofstream file_out { filename };
+    void export_ply(const std::string &filename, const SurfaceMesh &surface_mesh) {
+        std::ofstream file_out{filename};
         if (!file_out.is_open())
             return;
 

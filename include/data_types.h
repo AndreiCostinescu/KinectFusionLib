@@ -23,7 +23,7 @@
 
 using cv::cuda::GpuMat;
 
-namespace kinectfusion {
+namespace KinectFusion {
     /**
      *
      * \brief The camera intrinsics

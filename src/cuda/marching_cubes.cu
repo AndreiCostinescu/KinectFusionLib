@@ -12,7 +12,7 @@
 
 using cv::cuda::GpuMat;
 
-namespace kinectfusion {
+namespace KinectFusion {
     namespace internal {
         namespace cuda {
 
@@ -22,31 +22,27 @@ namespace kinectfusion {
 
             //##### HELPERS #####
             static __device__ __forceinline__
-            unsigned int lane_ID()
-            {
+            unsigned int lane_ID() {
                 unsigned int ret;
                 asm("mov.u32 %0, %laneid;" : "=r"(ret));
                 return ret;
             }
 
             static __device__ __forceinline__
-            int laneMaskLt()
-            {
+            int laneMaskLt() {
                 unsigned int ret;
                 asm("mov.u32 %0, %lanemask_lt;" : "=r"(ret));
                 return ret;
             }
 
             static __device__ __forceinline__
-            int binaryExclScan(int ballot_mask)
-            {
+            int binaryExclScan(int ballot_mask) {
                 return __popc(laneMaskLt() & ballot_mask);
             }
 
             __device__ __forceinline__
             float read_tsdf(const PtrStep<short2> tsdf_volume, const int3 volume_size,
-                            const int x, const int y, const int z, short& weight)
-            {
+                            const int x, const int y, const int z, short &weight) {
                 short2 voxel_tuple = tsdf_volume.ptr(z * volume_size.y + y)[x];
                 weight = voxel_tuple.y;
                 return static_cast<float>(voxel_tuple.x) * DIVSHORTMAX;
@@ -54,34 +50,46 @@ namespace kinectfusion {
 
             __device__ __forceinline__
             int compute_cube_index(const PtrStep<short2> tsdf_volume, const int3 volume_size,
-                                   const int x, const int y, const int z, float tsdf_values[8])
-            {
+                                   const int x, const int y, const int z, float tsdf_values[8]) {
                 short weight;
                 int cube_index = 0; // calculate flag indicating if each vertex is inside or outside isosurface
 
-                cube_index += static_cast<int>(tsdf_values[0] = read_tsdf(tsdf_volume, volume_size, x, y, z, weight) < 0.f);
+                cube_index += static_cast<int>(tsdf_values[0] =
+                                                       read_tsdf(tsdf_volume, volume_size, x, y, z, weight) < 0.f);
                 if (weight == 0) return 0;
-                cube_index += static_cast<int>(tsdf_values[1] = read_tsdf(tsdf_volume, volume_size, x + 1, y, z, weight) < 0.f) << 1;
+                cube_index += static_cast<int>(tsdf_values[1] =
+                                                       read_tsdf(tsdf_volume, volume_size, x + 1, y, z, weight) < 0.f)
+                        << 1;
                 if (weight == 0) return 0;
-                cube_index += static_cast<int>(tsdf_values[2] = read_tsdf(tsdf_volume, volume_size, x + 1, y + 1, z, weight) < 0.f) << 2;
+                cube_index += static_cast<int>(tsdf_values[2] =
+                                                       read_tsdf(tsdf_volume, volume_size, x + 1, y + 1, z, weight) <
+                                                       0.f) << 2;
                 if (weight == 0) return 0;
-                cube_index += static_cast<int>(tsdf_values[3] = read_tsdf(tsdf_volume, volume_size, x, y + 1, z, weight) < 0.f) << 3;
+                cube_index += static_cast<int>(tsdf_values[3] =
+                                                       read_tsdf(tsdf_volume, volume_size, x, y + 1, z, weight) < 0.f)
+                        << 3;
                 if (weight == 0) return 0;
-                cube_index += static_cast<int>(tsdf_values[4] = read_tsdf(tsdf_volume, volume_size, x, y, z + 1, weight) < 0.f) << 4;
+                cube_index += static_cast<int>(tsdf_values[4] =
+                                                       read_tsdf(tsdf_volume, volume_size, x, y, z + 1, weight) < 0.f)
+                        << 4;
                 if (weight == 0) return 0;
-                cube_index += static_cast<int>(tsdf_values[5] = read_tsdf(tsdf_volume, volume_size, x + 1, y, z + 1, weight) < 0.f) << 5;
+                cube_index += static_cast<int>(tsdf_values[5] =
+                                                       read_tsdf(tsdf_volume, volume_size, x + 1, y, z + 1, weight) <
+                                                       0.f) << 5;
                 if (weight == 0) return 0;
-                cube_index += static_cast<int>(tsdf_values[6] = read_tsdf(tsdf_volume, volume_size, x + 1, y + 1, z + 1, weight) < 0.f) << 6;
+                cube_index += static_cast<int>(tsdf_values[6] = read_tsdf(tsdf_volume, volume_size, x + 1, y + 1, z + 1,
+                                                                          weight) < 0.f) << 6;
                 if (weight == 0) return 0;
-                cube_index += static_cast<int>(tsdf_values[7] = read_tsdf(tsdf_volume, volume_size, x, y + 1, z + 1, weight) < 0.f) << 7;
+                cube_index += static_cast<int>(tsdf_values[7] =
+                                                       read_tsdf(tsdf_volume, volume_size, x, y + 1, z + 1, weight) <
+                                                       0.f) << 7;
                 if (weight == 0) return 0;
 
                 return cube_index;
             }
 
             __device__ __forceinline__
-            float3 get_node_coordinates(const int x, const int y, const int z, const float voxel_size)
-            {
+            float3 get_node_coordinates(const int x, const int y, const int z, const float voxel_size) {
                 float3 position;
 
                 position.x = (x + 0.5f) * voxel_size;
@@ -92,8 +100,7 @@ namespace kinectfusion {
             }
 
             __device__ __forceinline__
-            float3 vertex_interpolate(const float3 p0, const float3 p1, const float f0, const float f1)
-            {
+            float3 vertex_interpolate(const float3 p0, const float3 p1, const float f0, const float f1) {
                 float t = (0.f - f0) / (f1 - f0 + 1e-15f);
                 return make_float3(p0.x + t * (p1.x - p0.x),
                                    p0.y + t * (p1.y - p0.y),
@@ -104,8 +111,7 @@ namespace kinectfusion {
             __global__
             void get_occupied_voxels_kernel(const PtrStep<short2> volume, const int3 volume_size,
                                             PtrStepSz<int> occupied_voxel_indices, PtrStepSz<int> number_vertices,
-                                            const PtrStepSz<int> number_vertices_table)
-            {
+                                            const PtrStepSz<int> number_vertices_table) {
                 const int x = threadIdx.x + blockIdx.x * blockDim.x;
                 const int y = threadIdx.y + blockIdx.y * blockDim.y;
 
@@ -124,7 +130,8 @@ namespace kinectfusion {
                     if (x + 1 < volume_size.x && y + 1 < volume_size.y) {
                         float tsdf_values[8];
                         const int cube_index = compute_cube_index(volume, volume_size, x, y, z, tsdf_values);
-                        n_vertices = (cube_index == 0 || cube_index == 255) ? 0 : number_vertices_table.ptr(0)[cube_index];
+                        n_vertices = (cube_index == 0 || cube_index == 255) ? 0 : number_vertices_table.ptr(
+                                0)[cube_index];
                     }
 
                     const int total = __popc(__ballot(n_vertices > 0));
@@ -167,11 +174,11 @@ namespace kinectfusion {
             }
 
             __global__
-            void generate_triangles_kernel(const PtrStep<short2> tsdf_volume, const int3 volume_size, const float voxel_size,
-                                           const PtrStepSz<int> occupied_voxels, const PtrStepSz<int> vertex_offsets,
+            void generate_triangles_kernel(const PtrStep<short2> tsdf_volume, const int3 volume_size,
+                                           const float voxel_size, const PtrStepSz<int> occupied_voxels,
+                                           const PtrStepSz<int> vertex_offsets,
                                            const PtrStep<int> number_vertices_table, const PtrStep<int> triangle_table,
-                                           PtrStep<float3> triangle_buffer)
-            {
+                                           PtrStep<float3> triangle_buffer) {
                 const int idx = (blockIdx.y * 65536 + blockIdx.x) * 256 + threadIdx.x;
 
                 if (idx >= occupied_voxels.cols)
@@ -234,9 +241,9 @@ namespace kinectfusion {
 
 
             __global__
-            void get_color_values_kernel(const PtrStep<uchar3> color_volume, const int3 volume_size, const float voxel_scale,
-                                         const PtrStep<float3> vertices, PtrStepSz<uchar3> vertex_colors)
-            {
+            void get_color_values_kernel(const PtrStep<uchar3> color_volume, const int3 volume_size,
+                                         const float voxel_scale, const PtrStep<float3> vertices,
+                                         PtrStepSz<uchar3> vertex_colors) {
                 const auto thread_id = blockDim.x * blockIdx.x + threadIdx.x;
 
                 if (thread_id >= vertex_colors.cols)
@@ -255,8 +262,7 @@ namespace kinectfusion {
 
 
             //##### HOST FUNCTIONS #####
-            SurfaceMesh marching_cubes(const VolumeData& volume, const int triangles_buffer_size)
-            {
+            SurfaceMesh marching_cubes(const VolumeData &volume, const int triangles_buffer_size) {
                 MeshData mesh_data(triangles_buffer_size / 3);
 
                 // ### PREPARATION : Upload lookup tables ###
@@ -275,8 +281,9 @@ namespace kinectfusion {
                             static_cast<unsigned>(std::ceil(volume.volume_size.y / threads.y)));
 
                 get_occupied_voxels_kernel<<<blocks, threads>>>(volume.tsdf_volume, volume.volume_size,
-                        mesh_data.occupied_voxel_ids_buffer, mesh_data.number_vertices_buffer,
-                        number_vertices_table);
+                                                                mesh_data.occupied_voxel_ids_buffer,
+                                                                mesh_data.number_vertices_buffer,
+                                                                number_vertices_table);
 
                 cudaDeviceSynchronize();
 
@@ -310,11 +317,11 @@ namespace kinectfusion {
                 dim3 grid(min(blocks_num, 65536), static_cast<unsigned>(std::ceil(blocks_num / 65536)));
                 grid.y = 1;
 
-                generate_triangles_kernel<<<grid, block>>> (volume.tsdf_volume,
-                        volume.volume_size, volume.voxel_scale,
-                        mesh_data.occupied_voxel_ids, mesh_data.vertex_offsets,
-                        number_vertices_table, triangle_table,
-                        mesh_data.triangle_buffer);
+                generate_triangles_kernel<<<grid, block>>>(volume.tsdf_volume,
+                                                           volume.volume_size, volume.voxel_scale,
+                                                           mesh_data.occupied_voxel_ids, mesh_data.vertex_offsets,
+                                                           number_vertices_table, triangle_table,
+                                                           mesh_data.triangle_buffer);
 
                 cudaDeviceSynchronize();
                 // ### ###
@@ -324,19 +331,19 @@ namespace kinectfusion {
                 GpuMat vertex_colors = cv::cuda::createContinuous(1, total_vertices, CV_8UC3);
 
                 int n_blocks = static_cast<int>(std::ceil(total_vertices / 1024));
-                get_color_values_kernel<<<n_blocks, 1024>>> (volume.color_volume,
-                        volume.volume_size, volume.voxel_scale,
-                        triangles_output, vertex_colors);
+                get_color_values_kernel<<<n_blocks, 1024>>>(volume.color_volume,
+                                                            volume.volume_size, volume.voxel_scale,
+                                                            triangles_output, vertex_colors);
 
                 cudaDeviceSynchronize();
 
                 // Download triangles
-                cv::Mat vertex_output {};
+                cv::Mat vertex_output{};
                 triangles_output.download(vertex_output);
-                cv::Mat color_output {};
+                cv::Mat color_output{};
                 vertex_colors.download(color_output);
 
-                return SurfaceMesh { vertex_output, color_output, total_vertices, total_vertices / 3 };
+                return SurfaceMesh{vertex_output, color_output, total_vertices, total_vertices / 3};
             }
         }
     }

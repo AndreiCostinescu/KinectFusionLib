@@ -9,14 +9,13 @@
 
 using Matf31da = Eigen::Matrix<float, 3, 1, Eigen::DontAlign>;
 
-namespace kinectfusion {
+namespace KinectFusion {
     namespace internal {
         namespace cuda {
 
             template<int SIZE>
             static __device__ __forceinline__
-            void reduce(volatile double* buffer)
-            {
+            void reduce(volatile double *buffer) {
                 const int thread_id = threadIdx.y * blockDim.x + threadIdx.x;
                 double value = buffer[thread_id];
 
@@ -57,8 +56,7 @@ namespace kinectfusion {
                                  const PtrStep<float3> vertex_map_previous, const PtrStep<float3> normal_map_previous,
                                  const float distance_threshold, const float angle_threshold, const int cols,
                                  const int rows,
-                                 PtrStep<double> global_buffer)
-            {
+                                 PtrStep<double> global_buffer) {
                 const int x = blockIdx.x * blockDim.x + threadIdx.x;
                 const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -127,8 +125,8 @@ namespace kinectfusion {
                 float row[7];
 
                 if (correspondence_found) {
-                    *(Matf31da*) &row[0] = s.cross(n);
-                    *(Matf31da*) &row[3] = n;
+                    *(Matf31da *) &row[0] = s.cross(n);
+                    *(Matf31da *) &row[3] = n;
                     row[6] = n.dot(d - s);
                 } else
                     row[0] = row[1] = row[2] = row[3] = row[4] = row[5] = row[6] = 0.f;
@@ -152,8 +150,7 @@ namespace kinectfusion {
             }
 
             __global__
-            void reduction_kernel(PtrStep<double> global_buffer, const int length, PtrStep<double> output)
-            {
+            void reduction_kernel(PtrStep<double> global_buffer, const int length, PtrStep<double> output) {
                 double sum = 0.0;
                 for (int t = threadIdx.x; t < length; t += 512)
                     sum += *(global_buffer.ptr(blockIdx.x) + t);
@@ -169,14 +166,13 @@ namespace kinectfusion {
                     output.ptr(blockIdx.x)[0] = smem[0];
             };
 
-            void estimate_step(const Eigen::Matrix3f& rotation_current, const Matf31da& translation_current,
-                               const cv::cuda::GpuMat& vertex_map_current, const cv::cuda::GpuMat& normal_map_current,
-                               const Eigen::Matrix3f& rotation_previous_inv, const Matf31da& translation_previous,
-                               const CameraParameters& cam_params,
-                               const cv::cuda::GpuMat& vertex_map_previous, const cv::cuda::GpuMat& normal_map_previous,
+            void estimate_step(const Eigen::Matrix3f &rotation_current, const Matf31da &translation_current,
+                               const cv::cuda::GpuMat &vertex_map_current, const cv::cuda::GpuMat &normal_map_current,
+                               const Eigen::Matrix3f &rotation_previous_inv, const Matf31da &translation_previous,
+                               const CameraParameters &cam_params,
+                               const cv::cuda::GpuMat &vertex_map_previous, const cv::cuda::GpuMat &normal_map_previous,
                                float distance_threshold, float angle_threshold,
-                               Eigen::Matrix<double, 6, 6, Eigen::RowMajor>& A, Eigen::Matrix<double, 6, 1>& b)
-            {
+                               Eigen::Matrix<double, 6, 6, Eigen::RowMajor> &A, Eigen::Matrix<double, 6, 1> &b) {
                 const int cols = vertex_map_current.cols;
                 const int rows = vertex_map_current.rows;
 
@@ -185,21 +181,21 @@ namespace kinectfusion {
                 grid.x = static_cast<unsigned int>(std::ceil(cols / block.x));
                 grid.y = static_cast<unsigned int>(std::ceil(rows / block.y));
 
-                cv::cuda::GpuMat sum_buffer { cv::cuda::createContinuous(27, 1, CV_64FC1) };
-                cv::cuda::GpuMat global_buffer { cv::cuda::createContinuous(27, grid.x * grid.y, CV_64FC1) };
+                cv::cuda::GpuMat sum_buffer{cv::cuda::createContinuous(27, 1, CV_64FC1)};
+                cv::cuda::GpuMat global_buffer{cv::cuda::createContinuous(27, grid.x * grid.y, CV_64FC1)};
 
                 estimate_kernel<<<grid, block>>>(rotation_current, translation_current,
-                        vertex_map_current, normal_map_current,
-                        rotation_previous_inv, translation_previous,
-                        cam_params,
-                        vertex_map_previous, normal_map_previous,
-                        distance_threshold, angle_threshold,
-                        cols, rows,
-                        global_buffer);
+                                                 vertex_map_current, normal_map_current,
+                                                 rotation_previous_inv, translation_previous,
+                                                 cam_params,
+                                                 vertex_map_previous, normal_map_previous,
+                                                 distance_threshold, angle_threshold,
+                                                 cols, rows,
+                                                 global_buffer);
 
                 reduction_kernel<<<27, 512>>>(global_buffer, grid.x * grid.y, sum_buffer);
 
-                cv::Mat host_data { 27, 1, CV_64FC1 };
+                cv::Mat host_data{27, 1, CV_64FC1};
                 sum_buffer.download(host_data);
 
                 int shift = 0;

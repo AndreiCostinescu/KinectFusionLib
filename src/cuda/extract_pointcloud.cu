@@ -4,7 +4,7 @@
 
 #include "include/common.h"
 
-namespace kinectfusion {
+namespace KinectFusion {
     namespace internal {
         namespace cuda {
 
@@ -12,8 +12,7 @@ namespace kinectfusion {
             void extract_points_kernel(const PtrStep<short2> tsdf_volume, const PtrStep<uchar3> color_volume,
                                        const int3 volume_size, const float voxel_scale,
                                        PtrStep<float3> vertices, PtrStep<float3> normals, PtrStep<uchar3> color,
-                                       int *point_num)
-            {
+                                       int *point_num) {
                 const int x = blockIdx.x * blockDim.x + threadIdx.x;
                 const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -88,25 +87,24 @@ namespace kinectfusion {
                 }
             }
 
-            PointCloud extract_points(const VolumeData& volume, const int buffer_size)
-            {
-                CloudData cloud_data { buffer_size };
+            PointCloud extract_points(const VolumeData &volume, const int buffer_size) {
+                CloudData cloud_data{buffer_size};
 
                 dim3 threads(32, 32);
                 dim3 blocks((volume.volume_size.x + threads.x - 1) / threads.x,
                             (volume.volume_size.y + threads.y - 1) / threads.y);
 
                 extract_points_kernel<<<blocks, threads>>>(volume.tsdf_volume, volume.color_volume,
-                        volume.volume_size, volume.voxel_scale,
-                        cloud_data.vertices, cloud_data.normals, cloud_data.color,
-                        cloud_data.point_num);
+                                                           volume.volume_size, volume.voxel_scale,
+                                                           cloud_data.vertices, cloud_data.normals, cloud_data.color,
+                                                           cloud_data.point_num);
 
-                cudaThreadSynchronize();
+                cudaDeviceSynchronize();
 
                 cloud_data.download();
 
-                return PointCloud {cloud_data.host_vertices, cloud_data.host_normals,
-                                   cloud_data.host_color, cloud_data.host_point_num};
+                return PointCloud{cloud_data.host_vertices, cloud_data.host_normals,
+                                  cloud_data.host_color, cloud_data.host_point_num};
             }
         }
     }

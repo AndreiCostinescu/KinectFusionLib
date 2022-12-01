@@ -9,10 +9,23 @@
 #define __global__
 #define __forceinline__
 #define __shared__
+
 inline void __syncthreads() {}
-using blockDim = struct { int x; int y; };
-using threadIdx = struct { int x; int y; int z; };
-using blockIdx = struct { int x; int y; int z; };
+
+using blockDim = struct {
+    int x;
+    int y;
+};
+using threadIdx = struct {
+    int x;
+    int y;
+    int z;
+};
+using blockIdx = struct {
+    int x;
+    int y;
+    int z;
+};
 #endif
 
 #include <data_types.h>

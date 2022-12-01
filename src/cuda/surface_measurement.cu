@@ -6,14 +6,13 @@
 
 using cv::cuda::GpuMat;
 
-namespace kinectfusion {
+namespace KinectFusion {
     namespace internal {
         namespace cuda {
 
             __global__
             void kernel_compute_vertex_map(const PtrStepSz<float> depth_map, PtrStep<float3> vertex_map,
-                                           const float depth_cutoff, const CameraParameters cam_params)
-            {
+                                           const float depth_cutoff, const CameraParameters &cam_params) {
                 const int x = blockIdx.x * blockDim.x + threadIdx.x;
                 const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -32,8 +31,7 @@ namespace kinectfusion {
             }
 
             __global__
-            void kernel_compute_normal_map(const PtrStepSz<float3> vertex_map, PtrStep<float3> normal_map)
-            {
+            void kernel_compute_normal_map(const PtrStepSz<float3> vertex_map, PtrStep<float3> normal_map) {
                 const int x = blockIdx.x * blockDim.x + threadIdx.x;
                 const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -63,26 +61,24 @@ namespace kinectfusion {
                 normal_map.ptr(y)[x] = make_float3(normal.x(), normal.y(), normal.z());
             }
 
-            void compute_vertex_map(const GpuMat& depth_map, GpuMat& vertex_map, const float depth_cutoff,
-                                    const CameraParameters cam_params)
-            {
+            void compute_vertex_map(const GpuMat &depth_map, GpuMat &vertex_map, const float depth_cutoff,
+                                    const CameraParameters &cam_params) {
                 dim3 threads(32, 32);
                 dim3 blocks((depth_map.cols + threads.x - 1) / threads.x, (depth_map.rows + threads.y - 1) / threads.y);
 
                 kernel_compute_vertex_map << < blocks, threads >> > (depth_map, vertex_map, depth_cutoff, cam_params);
 
-                cudaThreadSynchronize();
+                cudaDeviceSynchronize();
             }
 
-            void compute_normal_map(const GpuMat& vertex_map, GpuMat& normal_map)
-            {
+            void compute_normal_map(const GpuMat &vertex_map, GpuMat &normal_map) {
                 dim3 threads(32, 32);
                 dim3 blocks((vertex_map.cols + threads.x - 1) / threads.x,
                             (vertex_map.rows + threads.y - 1) / threads.y);
 
                 kernel_compute_normal_map<<<blocks, threads>>>(vertex_map, normal_map);
 
-                cudaThreadSynchronize();
+                cudaDeviceSynchronize();
             }
         }
     }

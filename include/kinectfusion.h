@@ -6,7 +6,7 @@
 
 #include "data_types.h"
 
-namespace kinectfusion {
+namespace KinectFusion {
     /*
      *
      * \brief This is the KinectFusion pipeline that processes incoming frames and fuses them into one volume
@@ -29,8 +29,7 @@ namespace kinectfusion {
          * @param _camera_parameters The \ref{CameraParameters} that you want this pipeline to use
          * @param _configuration The \ref{GlobalConfiguration} with all parameters the pipeline should use
          */
-        Pipeline(const CameraParameters _camera_parameters,
-                 const GlobalConfiguration _configuration);
+        Pipeline(CameraParameters _camera_parameters, const GlobalConfiguration& _configuration);
 
         ~Pipeline() = default;
 

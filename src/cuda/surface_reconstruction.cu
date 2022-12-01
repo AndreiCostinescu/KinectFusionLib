@@ -6,17 +6,17 @@
 
 using Vec2ida = Eigen::Matrix<int, 2, 1, Eigen::DontAlign>;
 
-namespace kinectfusion {
+namespace KinectFusion {
     namespace internal {
         namespace cuda {
 
             __global__
             void update_tsdf_kernel(const PtrStepSz<float> depth_image, const PtrStepSz<uchar3> color_image,
                                     PtrStepSz<short2> tsdf_volume, PtrStepSz<uchar3> color_volume,
-                                    int3 volume_size, float voxel_scale,
-                                    CameraParameters cam_params, const float truncation_distance,
-                                    Eigen::Matrix<float, 3, 3, Eigen::DontAlign> rotation, Vec3fda translation)
-            {
+                                    int3 volume_size, float voxel_scale, CameraParameters cam_params,
+                                    const float truncation_distance,
+                                    const Eigen::Matrix<float, 3, 3, Eigen::DontAlign> &rotation,
+                                    const Vec3fda &translation) {
                 const int x = blockIdx.x * blockDim.x + threadIdx.x;
                 const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -33,8 +33,10 @@ namespace kinectfusion {
                         continue;
 
                     const Vec2ida uv(
-                            __float2int_rn(camera_pos.x() / camera_pos.z() * cam_params.focal_x + cam_params.principal_x),
-                            __float2int_rn(camera_pos.y() / camera_pos.z() * cam_params.focal_y + cam_params.principal_y));
+                            __float2int_rn(
+                                    camera_pos.x() / camera_pos.z() * cam_params.focal_x + cam_params.principal_x),
+                            __float2int_rn(
+                                    camera_pos.y() / camera_pos.z() * cam_params.focal_y + cam_params.principal_y));
 
                     if (uv.x() < 0 || uv.x() >= depth_image.cols || uv.y() < 0 || uv.y() >= depth_image.rows)
                         continue;
@@ -72,7 +74,7 @@ namespace kinectfusion {
                                                                                 static_cast<short>(new_weight));
 
                         if (sdf <= truncation_distance / 2 && sdf >= -truncation_distance / 2) {
-                            uchar3& model_color = color_volume.ptr(z * volume_size.y + y)[x];
+                            uchar3 &model_color = color_volume.ptr(z * volume_size.y + y)[x];
                             const uchar3 image_color = color_image.ptr(uv.y())[uv.x()];
 
                             model_color.x = static_cast<uchar>(
@@ -90,22 +92,21 @@ namespace kinectfusion {
             }
 
 
-            void surface_reconstruction(const cv::cuda::GpuMat& depth_image, const cv::cuda::GpuMat& color_image,
-                                        VolumeData& volume,
-                                        const CameraParameters& cam_params, const float truncation_distance,
-                                        const Eigen::Matrix4f& model_view)
-            {
+            void surface_reconstruction(const cv::cuda::GpuMat &depth_image, const cv::cuda::GpuMat &color_image,
+                                        VolumeData &volume,
+                                        const CameraParameters &cam_params, const float truncation_distance,
+                                        const Eigen::Matrix4f &model_view) {
                 const dim3 threads(32, 32);
                 const dim3 blocks((volume.volume_size.x + threads.x - 1) / threads.x,
                                   (volume.volume_size.y + threads.y - 1) / threads.y);
 
                 update_tsdf_kernel<<<blocks, threads>>>(depth_image, color_image,
-                        volume.tsdf_volume, volume.color_volume,
-                        volume.volume_size, volume.voxel_scale,
-                        cam_params, truncation_distance,
-                        model_view.block(0, 0, 3, 3), model_view.block(0, 3, 3, 1));
+                                                        volume.tsdf_volume, volume.color_volume,
+                                                        volume.volume_size, volume.voxel_scale,
+                                                        cam_params, truncation_distance,
+                                                        model_view.block(0, 0, 3, 3), model_view.block(0, 3, 3, 1));
 
-                cudaThreadSynchronize();
+                cudaDeviceSynchronize();
             }
         }
     }

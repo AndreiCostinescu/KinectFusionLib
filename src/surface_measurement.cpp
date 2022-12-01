@@ -7,26 +7,28 @@
 #pragma GCC diagnostic ignored "-Wall"
 #pragma GCC diagnostic ignored "-Wextra"
 #pragma GCC diagnostic ignored "-Weffc++"
+
 #include <opencv2/cudaimgproc.hpp>
 #include <opencv2/cudawarping.hpp>
+
 #pragma GCC diagnostic pop
 
 using cv::cuda::GpuMat;
 
-namespace kinectfusion {
+namespace KinectFusion {
     namespace internal {
 
         namespace cuda { // Forward declare CUDA functions
-            void compute_vertex_map(const GpuMat& depth_map, GpuMat& vertex_map, const float depth_cutoff,
-                                    const CameraParameters cam_params);
-            void compute_normal_map(const GpuMat& vertex_map, GpuMat& normal_map);
+            void compute_vertex_map(const GpuMat &depth_map, GpuMat &vertex_map, float depth_cutoff,
+                                    CameraParameters const &cam_params);
+
+            void compute_normal_map(const GpuMat &vertex_map, GpuMat &normal_map);
         }
 
-        FrameData surface_measurement(const cv::Mat_<float>& input_frame,
-                                      const CameraParameters& camera_params,
+        FrameData surface_measurement(const cv::Mat_<float> &input_frame,
+                                      const CameraParameters &camera_params,
                                       const size_t num_levels, const float depth_cutoff,
-                                      const int kernel_size, const float color_sigma, const float spatial_sigma)
-        {
+                                      const int kernel_size, const float color_sigma, const float spatial_sigma) {
             // Initialize frame data
             FrameData data(num_levels);
 
