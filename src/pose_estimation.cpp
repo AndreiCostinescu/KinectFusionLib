@@ -1,7 +1,7 @@
 // This is the CPU part of the ICP implementation
 // Author: Christian Diller, git@christian-diller.de
 
-#include <kinectfusion.h>
+#include <KinectFusion.h>
 
 using Matf31da = Eigen::Matrix<float, 3, 1, Eigen::DontAlign>;
 using Matrix3frm = Eigen::Matrix<float, 3, 3, Eigen::RowMajor>;

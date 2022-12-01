@@ -28,7 +28,7 @@ using blockIdx = struct {
 };
 #endif
 
-#include <data_types.h>
+#include <DataTypes.h>
 
 #define DIVSHORTMAX 0.0000305185f //1.f / SHRT_MAX;
 #define SHORTMAX 32767 //SHRT_MAX;
