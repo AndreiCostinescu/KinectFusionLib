@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.0)
 
 project(KinectFusionLib)
+set(PROJECT_VERSION_STRING "1.1.0")
+set(PROJECT_TARGET ${PROJECT_NAME})
+set(PROJECT_INCLUDE_PREFIX ${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -38,5 +41,14 @@ set(PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 include_directories("${PROJECT_INCLUDE_DIR}" "${PROJECT_SOURCE_DIR}/cuda/include")
 file(GLOB KinectFusion_SRCS "${PROJECT_SOURCE_DIR}/cuda/*.cu" "${PROJECT_SOURCE_DIR}/*.cpp")
 
-cuda_add_library(KinectFusion STATIC "${KinectFusion_SRCS}")
-target_link_libraries(KinectFusion ${OpenCV_LIBS} Eigen3::Eigen)
+cuda_add_library(KinectFusionLib STATIC "${KinectFusion_SRCS}")
+target_link_libraries(KinectFusionLib ${OpenCV_LIBS} Eigen3::Eigen)
+target_include_directories(KinectFusionLib PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+        ${CUDA_INCLUDE_DIRS}
+        )
+
+set(ALL_INSTALL_TARGETS KinectFusionLib)
+
+include(cmake/installConfig.cmake)
