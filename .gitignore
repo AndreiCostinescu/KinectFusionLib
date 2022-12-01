@@ -118,6 +118,7 @@ $RECYCLE.BIN/
 # Project Specific #
 ####################
 build/
+build-*
 cmake-build-debug/
 data/
 .idea/
